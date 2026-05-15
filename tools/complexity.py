@@ -1,5 +1,6 @@
 import subprocess
 import os
+import sys
 import json
 
 
@@ -17,12 +18,13 @@ def analyse_complexity(project_path: str) -> dict:
 
     try:
         result = subprocess.run(
-            ["radon", "cc", "--json", "-s"] + python_files,
+            [sys.executable, "-m", "radon", "cc", "--json", "-s"] + python_files,
             capture_output=True,
             text=True,
             timeout=60
         )
-        data = json.loads(result.stdout) if result.stdout.strip() else {}
+        output = result.stdout.strip() or result.stderr.strip()
+        data = json.loads(output) if output else {}
 
         formatted = {}
         for filepath, blocks in data.items():

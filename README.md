@@ -95,6 +95,83 @@ ANTHROPIC_API_KEY=your_api_key_here
 python main.py --project ./path/to/your/python/project
 ```
 
+## Testing
+
+Tests are written with pytest and cover each tool individually. They do not require an API key and do not call the Claude API. HTTP calls to the OSV API are mocked using `unittest.mock`.
+
+To run the tests:
+
+```bash
+pytest tests/
+```
+
+### Test scenarios
+
+**File reader** (`tests/test_file_reader.py`)
+- Verifies that `list_files` returns Python and config files from a project directory
+- Verifies that subdirectory files are included
+- Verifies that an invalid path returns an error
+- Verifies that `read_file` returns the correct file content
+- Verifies that reading a nonexistent file returns an error
+
+**Vulnerability checker** (`tests/test_vulnerability.py`)
+- Verifies that `parse_requirements` extracts package names and versions correctly
+- Verifies that a missing requirements.txt returns an empty list
+- Verifies that `check_vulnerabilities` returns an error when no requirements.txt is present
+- Verifies that a mocked API response with vulnerabilities is parsed and returned correctly
+- Verifies that a mocked API response with no vulnerabilities returns empty lists
+
+**Code quality** (`tests/test_code_quality.py`)
+- Verifies that `analyse_quality` returns a result structure with files and total_issues
+- Verifies that known code issues are detected
+- Verifies that a project with no Python files returns an error
+
+**Complexity** (`tests/test_complexity.py`)
+- Verifies that `analyse_complexity` returns a result with file entries
+- Verifies that each function block contains name, complexity, and rank fields
+- Verifies that a project with no Python files returns an error
+
+## Deployment
+
+PyAudit is a local command-line application. No server or cloud deployment is required.
+
+To run the system on any machine:
+
+1. Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/paulgoujet/PyAudit.git
+cd PyAudit
+pip install -r requirements.txt
+```
+
+2. Create a `.env` file from the provided template:
+
+```bash
+cp .env.example .env
+```
+
+3. Add your Anthropic API key to `.env`:
+
+```
+ANTHROPIC_API_KEY=your_api_key_here
+```
+
+4. Run the auditor on any Python project:
+
+```bash
+python main.py --project ./path/to/your/python/project
+```
+
+## Data Conversion
+
+Each tool produces data in a different format that must be normalised before being passed back to the Claude agent.
+
+- The OSV API returns raw JSON vulnerability records. `tools/vulnerability.py` extracts only the relevant fields (id, summary, severity) and groups them by package name into a flat list.
+- pylint outputs a JSON array of issue objects. `tools/code_quality.py` groups them by relative file path and counts the total number of issues.
+- radon outputs a JSON object keyed by absolute file path. `tools/complexity.py` converts these to relative paths and extracts only the name, complexity score, and rank per function.
+- All tool results are serialised back to a JSON string before being returned to the Claude API as tool result content, which is the format expected by the Anthropic SDK.
+
 ## Requirements
 
 - Python 3.10+

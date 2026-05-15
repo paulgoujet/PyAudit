@@ -1,5 +1,6 @@
 import subprocess
 import os
+import sys
 import json
 
 
@@ -17,7 +18,7 @@ def analyse_quality(project_path: str) -> dict:
 
     try:
         result = subprocess.run(
-            ["pylint", "--output-format=json", "--score=no"] + python_files,
+            [sys.executable, "-m", "pylint", "--output-format=json", "--score=no"] + python_files,
             capture_output=True,
             text=True,
             timeout=60
